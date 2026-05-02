@@ -16,11 +16,15 @@ from automaton.capteur_fsm import CapteurFSM
 from automaton.intervention_fsm import InterventionFSM
 from automaton.vehicule_fsm import VehiculeFSM
 
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
 DB_CONFIG = {
-    "host": "localhost",
-    "user": "root",
-    "password": "root",      # ← adapte si besoin
-    "database": "smart_city"
+    "host":     os.getenv("DB_HOST", "localhost"),
+    "user":     os.getenv("DB_USER", "root"),
+    "password": os.getenv("DB_PASSWORD", "root"),
+    "database": os.getenv("DB_NAME", "smart_city")
 }
 
 

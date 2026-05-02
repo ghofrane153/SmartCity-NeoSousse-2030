@@ -148,10 +148,10 @@ with st.sidebar:
     # Menu de navigation
     # st.radio retourne la valeur sélectionnée
     page = st.radio(
-        "Navigation",
-        ["🔍 Requêtes NL", "📡 Capteurs", "⚙️ Automates", "🤖 Rapport IA"],
-        label_visibility="collapsed"
-    )
+    "Navigation",
+    ["🏠 Accueil", "🔍 Requêtes NL", "📡 Capteurs", "⚙️ Automates", "🤖 Rapport IA"],
+    label_visibility="collapsed"
+)
 
     st.divider()
     st.caption(f"Dernière mise à jour : {datetime.now().strftime('%H:%M:%S')}")
@@ -159,7 +159,133 @@ with st.sidebar:
     if st.button("🔄 Actualiser", use_container_width=True):
         st.rerun()   # Rerun = ré-exécute tout le script = rafraîchit
 
+# ════════════════════════════════════════════════════════════════════
+# PAGE 0 — Accueil / Dashboard
+# ════════════════════════════════════════════════════════════════════
+if page == "🏠 Accueil":
 
+    # ── Hero ─────────────────────────────────────────────────────
+    st.markdown("""
+    <div style="
+        background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+        border-radius: 16px;
+        padding: 48px 40px;
+        margin-bottom: 32px;
+        text-align: center;
+    ">
+        <div style="font-size: 3.5rem;">🏙️</div>
+        <h1 style="color:#e6edf3; font-size:2.5rem; margin:8px 0 4px;">Neo-Sousse 2030</h1>
+        <p style="color:#8b949e; font-size:1.1rem; margin:0;">
+            Plateforme de gestion intelligente de la ville · Smart City Dashboard
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── KPIs en temps réel ────────────────────────────────────────
+    st.markdown("### 📊 Vue d'ensemble en temps réel")
+
+    data_capteurs = appeler_api("GET", "/capteurs")
+    capteurs = data_capteurs if data_capteurs else MOCK_CAPTEURS
+    df_kpi = pd.DataFrame(capteurs)
+
+    total     = len(df_kpi)
+    actifs    = len(df_kpi[df_kpi['statut'] == 'ACTIF'])    if 'statut' in df_kpi.columns else 0
+    alertes   = len(df_kpi[df_kpi['statut'] == 'SIGNALE'])  if 'statut' in df_kpi.columns else 0
+    hs        = len(df_kpi[df_kpi['statut'] == 'HORS_SERVICE']) if 'statut' in df_kpi.columns else 0
+    taux      = round((actifs / total * 100), 1) if total > 0 else 0
+
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.markdown(f"""
+        <div style="background:linear-gradient(135deg,#1a4731,#0d2818);border:1px solid #3fb950;
+            border-radius:12px;padding:24px;text-align:center;">
+            <div style="font-size:2rem;font-weight:700;color:#3fb950;">{actifs}</div>
+            <div style="color:#8b949e;font-size:0.85rem;margin-top:4px;">✅ Capteurs actifs</div>
+        </div>""", unsafe_allow_html=True)
+    with col2:
+        st.markdown(f"""
+        <div style="background:linear-gradient(135deg,#3d2a00,#1f1500);border:1px solid #f0883e;
+            border-radius:12px;padding:24px;text-align:center;">
+            <div style="font-size:2rem;font-weight:700;color:#f0883e;">{alertes}</div>
+            <div style="color:#8b949e;font-size:0.85rem;margin-top:4px;">⚠️ Alertes actives</div>
+        </div>""", unsafe_allow_html=True)
+    with col3:
+        st.markdown(f"""
+        <div style="background:linear-gradient(135deg,#3d1c1c,#1f0e0e);border:1px solid #f85149;
+            border-radius:12px;padding:24px;text-align:center;">
+            <div style="font-size:2rem;font-weight:700;color:#f85149;">{hs}</div>
+            <div style="color:#8b949e;font-size:0.85rem;margin-top:4px;">🔴 Hors service</div>
+        </div>""", unsafe_allow_html=True)
+    with col4:
+        couleur = "#3fb950" if taux >= 80 else "#f0883e" if taux >= 50 else "#f85149"
+        bg      = "#1a4731" if taux >= 80 else "#3d2a00" if taux >= 50 else "#3d1c1c"
+        st.markdown(f"""
+        <div style="background:linear-gradient(135deg,{bg},#0d0d0d);border:1px solid {couleur};
+            border-radius:12px;padding:24px;text-align:center;">
+            <div style="font-size:2rem;font-weight:700;color:{couleur};">{taux}%</div>
+            <div style="color:#8b949e;font-size:0.85rem;margin-top:4px;">📈 Taux de disponibilité</div>
+        </div>""", unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # ── Graphique mini + Modules ──────────────────────────────────
+    col_left, col_right = st.columns([1.4, 1])
+
+    with col_left:
+        st.markdown("### 🗺️ Répartition par zone")
+        if 'zone' in df_kpi.columns:
+            df_zone = df_kpi.groupby('zone').size().reset_index(name='Capteurs')
+            fig = px.bar(
+                df_zone, x='zone', y='Capteurs',
+                color='Capteurs',
+                color_continuous_scale=['#388bfd', '#3fb950'],
+            )
+            fig.update_layout(
+                paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)',
+                font_color='#e6edf3',
+                xaxis=dict(gridcolor='#21262d', title=""),
+                yaxis=dict(gridcolor='#21262d'),
+                coloraxis_showscale=False,
+                margin=dict(t=10, b=10)
+            )
+            st.plotly_chart(fig, use_container_width=True)
+
+    with col_right:
+        st.markdown("### 🚀 Accès rapide")
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        modules = [
+            ("🔍", "Requêtes NL",  "Interroge la base en français", "#388bfd"),
+            ("📡", "Capteurs",     "Surveille tous les capteurs",   "#3fb950"),
+            ("⚙️", "Automates",    "Gère les transitions d'état",   "#f0883e"),
+            ("🤖", "Rapport IA",   "Génère des analyses IA",        "#bc8cff"),
+        ]
+
+        for icon, titre, desc, couleur in modules:
+            st.markdown(f"""
+            <div style="background:#161b22;border:1px solid #30363d;border-left:4px solid {couleur};
+                border-radius:10px;padding:14px 16px;margin-bottom:10px;cursor:pointer;">
+                <span style="font-size:1.2rem;">{icon}</span>
+                <span style="font-weight:600;color:#e6edf3;margin-left:8px;">{titre}</span>
+                <div style="color:#8b949e;font-size:0.8rem;margin-top:2px;margin-left:28px;">{desc}</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+    st.divider()
+
+    # ── Statut API ────────────────────────────────────────────────
+    st.markdown("### 🔌 Statut des services")
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        if health:
+            st.success("✅ API FastAPI — En ligne")
+        else:
+            st.error("❌ API FastAPI — Hors ligne")
+    with c2:
+        st.info(f"🕐 Dernière vérification : {datetime.now().strftime('%H:%M:%S')}")
+    with c3:
+        st.info(f"📍 Endpoint : `{API_URL}`")
 # ════════════════════════════════════════════════════════════════════
 # PAGE 1 — Requêtes en Langage Naturel
 # ════════════════════════════════════════════════════════════════════

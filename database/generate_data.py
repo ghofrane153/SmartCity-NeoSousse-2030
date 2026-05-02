@@ -90,15 +90,19 @@ print(f"  ✓ {len(proprietaires)} propriétaires insérés")
 # ============================================================
 print("Insertion des capteurs...")
 
-# Les zones correspondent à des quartiers de Sousse
 zones = ['ZONE_NORD', 'CENTRE_VILLE', 'ZONE_INDUSTRIELLE', 'ZONE_SUD', 'ZONE_PORTUAIRE']
 types_capteur = ['POLLUTION', 'BRUIT', 'TRAFIC', 'TEMPERATURE', 'HUMIDITE', 'RADIATION']
 
-# Coordonnées GPS centrées sur Sousse, Tunisie
-BASE_LAT = 35.8256
-BASE_LON = 10.6369
+# ✅ Bounding boxes par zone — coordonnées terrestres uniquement
+# La côte est à ~10.638 longitude → on ne dépasse jamais cette valeur
+ZONES_COORDS = {
+    'ZONE_NORD':         {'lat': (35.845, 35.870), 'lon': (10.575, 10.625)},
+    'CENTRE_VILLE':      {'lat': (35.820, 35.845), 'lon': (10.595, 10.635)},
+    'ZONE_INDUSTRIELLE': {'lat': (35.790, 35.820), 'lon': (10.560, 10.610)},
+    'ZONE_SUD':          {'lat': (35.760, 35.790), 'lon': (10.570, 10.620)},
+    'ZONE_PORTUAIRE':    {'lat': (35.825, 35.840), 'lon': (10.615, 10.638)},  # proche côte mais pas dans la mer
+}
 
-# Distribution réaliste des statuts (la majorité est ACTIF)
 statuts_distribution = (
     ['ACTIF'] * 55 +
     ['INACTIF'] * 15 +
@@ -109,15 +113,18 @@ statuts_distribution = (
 
 capteurs = []
 for i in range(1, 101):
-    capteur_id = f"C-{i:03d}"       # C-001, C-002, ..., C-100
+    capteur_id = f"C-{i:03d}"
+    zone = random.choice(zones)
+    coords = ZONES_COORDS[zone]
+    
     capteurs.append((
         capteur_id,
         random.choice(types_capteur),
-        BASE_LAT + random.uniform(-0.05, 0.05),
-        BASE_LON + random.uniform(-0.05, 0.05),
+        round(random.uniform(*coords['lat']), 6),   # ✅ lat dans la zone terrestre
+        round(random.uniform(*coords['lon']), 6),   # ✅ lon jamais dans la mer
         random.choice(statuts_distribution),
-        random.choice(zones),
-        random.randint(1, 20)        # id_proprietaire
+        zone,
+        random.randint(1, 20)
     ))
 
 cursor.executemany(
@@ -125,7 +132,7 @@ cursor.executemany(
     capteurs
 )
 conn.commit()
-print(f"  ✓ {len(capteurs)} capteurs insérés")
+print(f"  ✓ {len(capteurs)} capteurs insérés (coordonnées terrestres)")
 
 # ============================================================
 # ÉTAPE 3 — MESURES (séries temporelles sur 90 jours)
