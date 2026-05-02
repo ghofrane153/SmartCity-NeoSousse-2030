@@ -1,0 +1,19 @@
+# Fichier secrets — ne jamais push
+.env
+
+# Cache Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Fichiers PLY générés automatiquement
+parsetab.py
+parser.out
+
+# Environnements virtuels
+venv/
+.venv/
+
+# Fichiers système
+.DS_Store
+Thumbs.db
