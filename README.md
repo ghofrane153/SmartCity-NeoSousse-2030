@@ -164,4 +164,4 @@ Python · PLY · transitions · FastAPI · MySQL · LangChain · Hugging Face ·
 Projet réalisé en binôme.
 
 - **Ghofrane Kerkeni** — [LinkedIn](https://www.linkedin.com/in/VOTRE-PROFIL) · [GitHub](https://github.com/ghofrane153)
-- **Nom du binôme** — [GitHub](https://github.com/)
+
